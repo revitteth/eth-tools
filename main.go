@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 )
 
 type Request struct {
@@ -16,30 +17,39 @@ type Request struct {
 }
 
 type Response struct {
-	Error  interface{} `json:"error,omitempty"`
+	Error  *Error      `json:"error,omitempty"`
 	Result interface{} `json:"result,omitempty"`
 }
 
-const url = "http://max-desktop:8545"
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+const url = "http://localhost:8545"
+const reg = "0[xX][0-9a-fA-F]+"
 
 func main() {
-	start := 7507000
+	start := 7506000
 	end := 7508000
 
-	var naughtyBlocks = make(map[int]interface{})
+	re := regexp.MustCompile(reg)
+
+	var naughtyBlocks = make(map[int]*Error)
 
 	for i := start; i <= end; i++ {
 		resp, err := traceBlock(i)
 		if err != nil {
-			fmt.Println(err)
-			naughtyBlocks[i] = resp
+			naughtyBlocks[i] = resp.Error
+			match := re.FindString(resp.Error.Message)
+			fmt.Printf("block, %d, addr, %s, msg, %s\n", i, match, resp.Error.Message)
 		}
 	}
 
 	fmt.Println("done!")
 }
 
-func traceBlock(blockno int) (interface{}, error) {
+func traceBlock(blockno int) (Response, error) {
 
 	v := Request{
 		Jsonrpc: "2.0",
@@ -62,7 +72,7 @@ func traceBlock(blockno int) (interface{}, error) {
 	json.NewDecoder(resp.Body).Decode(&res)
 
 	if res.Error != nil {
-		return res, fmt.Errorf("block %d is naughty", blockno)
+		return res, fmt.Errorf("block %d errored", blockno)
 	}
 
 	return res, nil
