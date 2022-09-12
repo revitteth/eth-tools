@@ -99,7 +99,7 @@ func traceBlock(blockNum uint64) (string, error) {
 	var traceResponse Response
 	json.NewDecoder(resp.Body).Decode(&traceResponse)
 	if traceResponse.Error != (ErrorResponse{}) {
-		fmt.Println(fmt.Sprintf("block %d is naughty error=%v", blockNum, traceResponse.Error.Message))
+		fmt.Printf("block %d is naughty error=%v\n", blockNum, traceResponse.Error.Message)
 		return fmt.Sprintf("block %d is naughty error=%v", blockNum, traceResponse.Error.Message), nil
 	}
 
@@ -132,7 +132,7 @@ func getBlockByNumber() (uint64, error) {
 	json.NewDecoder(resp.Body).Decode(&res)
 
 	if res.Error != (ErrorResponse{}) {
-		return 0, fmt.Errorf("failed at getting BlockByNumber: err=%s", res.Error)
+		return 0, fmt.Errorf("failed at getting BlockByNumber: err=%+v", res.Error)
 	}
 	if res.Result["number"] == nil {
 		fmt.Println("No Response from eth_getBlockByNumber")
